@@ -33,7 +33,6 @@ public class TrajectoryView extends View {
 	public TrajectoryView(Context context) {
 		super(context);
 		init();
-
 	}
 
 	public TrajectoryView(Context context, AttributeSet attrs, int defStyle) {
