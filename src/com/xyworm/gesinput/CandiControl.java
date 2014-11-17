@@ -24,19 +24,21 @@ public class CandiControl {
 	private final String TAG = "CandiView";
 	private GesInputService mService;
 	/** 候选词组成的字符串 */ 
-	private String mSuggestions;
+	private ArrayList<String> mSuggestions;
 	/** 候选词TextView集合 */
 	private ArrayList<CandiItem> mCandiItems = new ArrayList<CandiItem>();
 	/** 最大候选个数 */
 	private final int MAX_SUGGES = 10;
 	/** 候选词父容器*/
 	private LinearLayout mCandiView;
+	private TrajectoryView mTrajectoryView;
 	/** 当前选中下标*/
 	private static int currentIndex;
 
-	public CandiControl(Context context,LinearLayout candiView) {
+	public CandiControl(Context context,LinearLayout candiView, TrajectoryView mTrajectoryView) {
 		this.mService = (GesInputService) context;
 		this.mCandiView = candiView;
+		this.mTrajectoryView = mTrajectoryView;
 		this.clear();
 	}
 
@@ -50,28 +52,27 @@ public class CandiControl {
 
 	/**
 	 * @Description 更新候选词界面
-	 * @param sugg
+	 * @param suggestions
 	 */
-	public void updateSuggestions(String sugg) {
-		Log.i(TAG, "upatesugges" + sugg);
+	public void updateSuggestions(ArrayList<String> suggestions) {
+		Log.i(TAG, "upatesugges" + suggestions);
 		mCandiView.removeAllViews();
 		mCandiItems.clear();
-		this.mSuggestions = sugg;
+		this.mSuggestions = suggestions;
 		mCandiItems.add(new CandiItem("DEL"));
 		if (mSuggestions != null) {
-			for (int i = 0; i < MAX_SUGGES && i < mSuggestions.length(); i++) {
-				CandiItem view = new CandiItem(String.valueOf(mSuggestions
-						.charAt(i)));
+			for (int i = 0; i < MAX_SUGGES && i < mSuggestions.size(); i++) {
+				CandiItem view = new CandiItem(mSuggestions.get(i));
 				mCandiItems.add(view);
 			}
 			currentIndex = 1;
 		} else {
 			currentIndex = 0;
 		}
-		mCandiItems.get(currentIndex).select(true);
 		for (int i = 0; i < mCandiItems.size(); i++) {
 			mCandiView.addView(mCandiItems.get(i), i);
 		}
+		this.selectIndex(currentIndex);
 		Log.i(TAG, "upatesugges" + mCandiItems.size());
 	}
 
@@ -83,6 +84,8 @@ public class CandiControl {
 		mCandiItems.get(currentIndex).select(false);
 		mCandiItems.get(iselect).select(true);
 		currentIndex = iselect;
+		
+		mTrajectoryView.updateGesture(mCandiItems.get(iselect).getText().toString());
 	}
 	
 	public void moveLeft(){

@@ -64,13 +64,12 @@ public class TrajectoryView extends View {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		super.onDraw(canvas);
-		// 将背景填充成白色
-		path = RingTrajectory.getPath();
-		path = getPathAfterAdapte(path);
+		
 		if (path == null) {
 			Log.i("TrajectoryView", "null");
 			return;
 		}
+		path = getPathAfterAdapte(path);
 		// 绘制红色轨迹
 		paint.setStyle(Paint.Style.STROKE);
 		paint.setPathEffect(effect);
@@ -111,6 +110,15 @@ public class TrajectoryView extends View {
 		// 路径应用变换
 		path.transform(matrix, newPath);
 		return newPath;
+	}
+
+	public void updateGesture(String string) {
+		// TODO Auto-generated method stub
+		if("DEL".equals(string))
+			path = new Path();
+		else
+			path = RingTrajectory.getLibPath(string);
+		this.invalidate();
 	}
 	
 	

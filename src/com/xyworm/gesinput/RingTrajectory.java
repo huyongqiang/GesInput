@@ -17,6 +17,7 @@ package com.xyworm.gesinput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 
 import android.content.Context;
 import android.gesture.Gesture;
@@ -29,6 +30,7 @@ import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -50,9 +52,9 @@ public class RingTrajectory {
 	private static float ScreenHeight;
 	private Context mContext;
 	/** 手势 */
-	private GestureLibrary RT_Library;
+	private static GestureLibrary RT_Library;
 	private ArrayList<GesturePoint> RT_GesturePointTogether = new ArrayList<GesturePoint>();
-	private Gesture RT_Gesture;
+	private Gesture RT_Gesture = null;
 	private GestureStroke RT_GestureStroke = null;
 	private String RT_GESTURE_MSG = new String("");
 	/** 当前手势是否有效 */
@@ -72,7 +74,7 @@ public class RingTrajectory {
 	// private static final float NS2S = 1.0f / 1000000000.0f;
 	private static final float NS2S = 1.0f;
 	/** 笔画时间间隔 */
-	private static double STROKE_TIME_SPAN = 0;
+	private static long STROKE_TIME_SPAN = 600;
 	private static final double STROKE_TIME_SPAN_Threshold = 1;
 	/** 识别模式 */
 	private static final int TRAJECTORY = 1;
@@ -112,10 +114,19 @@ public class RingTrajectory {
 	public static final String GES_TYPE_LET_X = "x";
 	public static final String GES_TYPE_LET_Z = "z";
 
-	private Path Adapter_Path = new Path();
-
+	
+	static Handler mHandler = new Handler();
+	private Runnable strokeRunnable = new Runnable(){
+		@Override
+		public void run(){
+			((GesInputService) mContext).onInputOver(getGestureSort());
+			RT_Gesture = new Gesture();
+		}
+	};
+	
 	public RingTrajectory(Context context) {
 		mContext = context;
+		RT_Gesture = new Gesture();
 		loadTrajectory();
 		RT_Path.moveTo(0, 0);
 	}
@@ -147,7 +158,7 @@ public class RingTrajectory {
 	private boolean loadTrajectory() {
 		// 加载手势库
 		RT_Library = GestureLibraries.fromRawResource(mContext,
-				R.raw.gestures_all);// 加载手势文件
+				R.raw.gestures);// 加载手势文件
 		if (!RT_Library.load()) {
 			Toast.makeText(mContext, "手势库加载失败", Toast.LENGTH_SHORT).show();
 			return false;
@@ -178,19 +189,19 @@ public class RingTrajectory {
 	};
 
 	/**
-	 * 获取手势结果的排序
+	 * 获取手势结果的排序结果
 	 * 
 	 * @return String
 	 */
-	public String getGestureSort() {
-		StringBuilder sb = new StringBuilder();
+	public ArrayList<String> getGestureSort() {
+		ArrayList<String> list = new ArrayList<String>();
 		ArrayList<Prediction> gestures = RT_Library.recognize(RT_Gesture);
 		Collections.sort(gestures, comparator);
 		for (int i = 0; i < gestures.size(); i++) {
 			Prediction result = gestures.get(i);
-			sb.append(result.name);
+			list.add(result.name);
 		}
-		return sb.toString();
+		return new ArrayList<String>(new LinkedHashSet<String>(list));
 	}
 
 	/** 手势添加 */
@@ -258,11 +269,12 @@ public class RingTrajectory {
 	 */
 	public void onActionDown() {
 		Log.i("****", "onActionDown");
+		
+		// 如果在在延时阶段内下面这句生效了，说明这是手势的后面几笔
+		mHandler.removeCallbacks(strokeRunnable);
 		// 初始化mGesture
-		RT_Gesture = new Gesture();
 		RT_GesturePointTogether.clear();
 		initalTrajectory();
-		RT_Gesture_Valid = true;
 		px = py = 0;
 	}
 
@@ -273,17 +285,19 @@ public class RingTrajectory {
 		Log.i("****", "onActionUp");
 		// 路径太短或者因为多开线程第一个执行了RT_GesturePointTogether.clear();
 		// 最终只执行一次
-		if (RT_GesturePointTogether.size() < MIN_POINT_SIZE) {
+		/*if (RT_GesturePointTogether.size() < MIN_POINT_SIZE) {
 			Log.i("****", RT_GesturePointTogether.size()
 					+ "---toSmallToReconize---");
 			RT_Gesture_Valid = false;
 			return;
-		}
+		}*/
 		// this.pointToPath();
-		STROKE_TIME_SPAN = 0;
 		// 生成手势
 		RT_GestureStroke = new GestureStroke(RT_GesturePointTogether);
 		RT_Gesture.addStroke(RT_GestureStroke);
+		
+		// 延时判断是否为最后一笔，并回调给Service
+		mHandler.postDelayed(strokeRunnable, STROKE_TIME_SPAN);
 
 	}
 
@@ -380,5 +394,18 @@ public class RingTrajectory {
 		for (int i = 0; i < preparePoint.size(); i++) {
 			this.onInputEventValues(preparePoint.get(i));
 		}
+	}
+	
+	/**
+	 * 通过名称获取手势库中的标准手势路径
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public static Path getLibPath(String name){
+		ArrayList<Gesture> list = RT_Library.getGestures(name);
+		if(list.size() > 0)
+			return list.get(0).toPath();
+		return null;
 	}
 }

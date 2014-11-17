@@ -67,7 +67,7 @@ public class GesInputService extends InputMethodService implements
 				.findViewById(R.id.trajectoryView);
 		mCandidateView = (LinearLayout) mInputView
 				.findViewById(R.id.candiView1);
-		mCandiControl = new CandiControl(this, mCandidateView);
+		mCandiControl = new CandiControl(this, mCandidateView,mTrajectoryView);
 		return mInputView;
 	}
 
@@ -116,7 +116,8 @@ public class GesInputService extends InputMethodService implements
 		super.onWindowShown();
 		Log.i(TAG, "onWindowShown");
 		mDetectView.setVisibility(View.VISIBLE);
-		mRingManager.runListener();
+		if(!isTouchGestureMode)
+			mRingManager.runListener();
 
 	}
 
@@ -125,9 +126,9 @@ public class GesInputService extends InputMethodService implements
 		super.onWindowHidden();
 		Log.i(TAG, "onWindowHidden");
 		mDetectView.setVisibility(View.GONE);
-		mRingManager.killListener();
+		if(!isTouchGestureMode)
+			mRingManager.killListener();
 		mRingTrajectory.commitPath();  // 清除轨迹
-		mTrajectoryView.invalidate();  // 刷新防止下次显示的时候轨迹还在
 		mCandiControl.clear();
 	}
 
@@ -136,7 +137,6 @@ public class GesInputService extends InputMethodService implements
 		Log.i(TAG, "Click");
 		mCandiControl.clickAndCommit(); 
 		mRingTrajectory.commitPath(); 
-		mTrajectoryView.invalidate();
 	}
 
 	@Override
@@ -149,7 +149,6 @@ public class GesInputService extends InputMethodService implements
 	public void onDeteMove(MotionEvent ev) {
 		if (isTouchGestureMode) {
 			mRingTrajectory.onInputEventValues(ev);
-			mTrajectoryView.invalidate();
 		}
 	}
 
@@ -164,13 +163,7 @@ public class GesInputService extends InputMethodService implements
 	@Override
 	public void onDeteGesEnd() {
 		mRingTrajectory.onActionUp();
-		if (!RingTrajectory.RT_Gesture_Valid) {
-			Toast.makeText(this, "手势无效", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		String suggestions = mRingTrajectory.getGestureSort();
-		mCandiControl.updateSuggestions(suggestions);
-		// Toast.makeText(this, suggestions, Toast.LENGTH_SHORT).show();
+		
 	}
 
 	@Override
@@ -191,7 +184,6 @@ public class GesInputService extends InputMethodService implements
 		// 进入手势模式了并且屏蔽了屏幕触摸事件
 		if (DetectView.isTouching && !isTouchGestureMode) {
 			mRingTrajectory.onInputEventValues(event);
-			mTrajectoryView.invalidate();
 			return;
 		}
 		if (event.getType() != RawEvent.EV_REL
@@ -220,6 +212,19 @@ public class GesInputService extends InputMethodService implements
 	public void onError(String msg) {
 		Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
 
+	}
+
+	/**
+	 * 由RingTrajectory回调，表示一个字书写完成
+	 * @param name 
+	 */
+	public void onInputOver(ArrayList<String> suggestions) {
+		/*if (!RingTrajectory.RT_Gesture_Valid) {
+			Toast.makeText(this, "手势无效", Toast.LENGTH_SHORT).show();
+			return;
+		}*/
+		mCandiControl.updateSuggestions(suggestions);
+		// Toast.makeText(this, suggestions, Toast.LENGTH_SHORT).show();
 	}
 
 }
