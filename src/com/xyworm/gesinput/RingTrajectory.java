@@ -37,13 +37,12 @@ import android.widget.Toast;
 
 import com.xyworm.ringsdk.utils.RawEvent;
 
-
-/** 
- * @ClassName  RingTrajectory 
- * @Description  戒指手势检测
+/**
+ * @ClassName RingTrajectory
+ * @Description 戒指手势检测
  * @author linweizh@qq.com
- * @date 2014-11-14  
- */ 
+ * @date 2014-11-14
+ */
 public class RingTrajectory {
 
 	/** 屏幕宽高 */
@@ -372,4 +371,14 @@ public class RingTrajectory {
 
 	}
 
+	/**
+	 * 接受预先接收到的点
+	 * 
+	 * @param preparePoint
+	 */
+	public void addPrePoints(ArrayList<RawEvent> preparePoint) {
+		for (int i = 0; i < preparePoint.size(); i++) {
+			this.onInputEventValues(preparePoint.get(i));
+		}
+	}
 }

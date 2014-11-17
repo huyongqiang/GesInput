@@ -1,5 +1,7 @@
 package com.xyworm.gesinput;
 
+import java.util.ArrayList;
+
 import android.graphics.PixelFormat;
 import android.inputmethodservice.InputMethodService;
 import android.util.Log;
@@ -44,7 +46,9 @@ public class GesInputService extends InputMethodService implements
 
 	/** 是否由触摸屏来获取手势事件 */ 
 	private static boolean isTouchGestureMode = false;
-
+	/** 保留长按缓冲时间内的点 */
+	public static ArrayList<RawEvent> preparePoint = new ArrayList<RawEvent>();
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -152,6 +156,8 @@ public class GesInputService extends InputMethodService implements
 	@Override
 	public void onDeteGesStart() {
 		mRingTrajectory.onActionDown();
+		// 将预先接收到的点加入手势当中
+		mRingTrajectory.addPrePoints(preparePoint);
 
 	}
 
@@ -177,6 +183,10 @@ public class GesInputService extends InputMethodService implements
 
 	@Override
 	public void onRawEvent(RawEvent event) {
+		// 处于按下但处于判断是否长按的延时缓冲时间当中
+		if(!DetectView.isTouching && DetectView.isDown){
+			preparePoint.add(event);
+		}
 
 		// 进入手势模式了并且屏蔽了屏幕触摸事件
 		if (DetectView.isTouching && !isTouchGestureMode) {

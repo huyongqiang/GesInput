@@ -26,6 +26,9 @@ public class DetectView extends View {
 	/** 是否正在触摸事件中 */ 
 	public static boolean isTouching;
 	
+	/** 是否已经按下*/
+	public static boolean isDown;
+	
 	private OnEventListener l;
 	
 	/** 双击事件的最大间隔 */ 
@@ -66,6 +69,7 @@ public class DetectView extends View {
 		preDowntime = 0;
 		preUptime = 0;
 		isTouching = false;
+		isDown = false;
 		// alpha值越大，屏幕越暗
 		this.setBackgroundColor(Color.argb(0, 0, 100, 0));
 
@@ -76,6 +80,7 @@ public class DetectView extends View {
 //		Log.i(TAG, "onTouchEvent" + event.getAction());
 		long currTime = event.getEventTime();
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			isDown = true;
 			// 延时判断是否为滑动
 			mHandler.postDelayed(touchRunnable, LONG_TOUCH_SPACE);
 			prePoint.x = (int) event.getRawX();
@@ -84,6 +89,9 @@ public class DetectView extends View {
 		}
 
 		if (event.getAction() == MotionEvent.ACTION_UP) {
+			isDown = false;
+			// 清空缓冲区的点
+			GesInputService.preparePoint.clear();
 			// 清除滑动延时
 			mHandler.removeCallbacks(touchRunnable);
 			if(isTouching){
