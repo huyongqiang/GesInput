@@ -147,7 +147,7 @@ public class RingTrajectory {
 	private boolean loadTrajectory() {
 		// 加载手势库
 		RT_Library = GestureLibraries.fromRawResource(mContext,
-				R.raw.gestures_all);// 加载手势文件
+				R.raw.gestures_allhan);// 加载手势文件
 		if (!RT_Library.load()) {
 			Toast.makeText(mContext, "手势库加载失败", Toast.LENGTH_SHORT).show();
 			return false;
