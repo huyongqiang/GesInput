@@ -21,7 +21,8 @@ import com.xyworm.ringsdk.utils.RawEvent;
  * @ClassName  GesInputService 
  * @Description  输入法的主要服务
  * @author linweizh@qq.com
- * @date 2014-11-14  
+ * @date 2014-11-17 
+ * 
  */ 
 public class GesInputService extends InputMethodService implements
 		DetectView.OnEventListener, OnRingEventListener {
